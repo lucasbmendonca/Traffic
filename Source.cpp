@@ -5,9 +5,15 @@
 #include <opencv2\highgui.hpp>
 #include <opencv2\videoio.hpp>
 #include <opencv2/core/types_c.h>
+#include <sstream>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/videoio.hpp>
+#include <opencv2/video.hpp>
 
 extern "C" {
 #include "vc.h"
+using namespace cv;
 }
 
 int main(void) {
@@ -29,10 +35,10 @@ int main(void) {
 	/* NOTA IMPORTANTE:
 	O ficheiro video.avi dever� estar localizado no mesmo direct�rio que o ficheiro de c�digo fonte.
 	*/
-	capture.open(videofile);
+	//capture.open(videofile);
 
 	/* Em alternativa, abrir captura de v�deo pela Webcam #0 */
-	//capture.open(0, cv::CAP_DSHOW); // Pode-se utilizar apenas capture.open(0);
+	capture.open(0, cv::CAP_DSHOW); // Pode-se utilizar apenas capture.open(0);
 
 	/* Verifica se foi poss�vel abrir o ficheiro de v�deo */
 	if (!capture.isOpened())
@@ -56,9 +62,15 @@ int main(void) {
 
 	cv::Mat frame, frame2;
 
-	OVC* blobs, * blobs2, * blobs3;
-	int nlabels, nlabels2, nlabels3;
+	//create Background Subtractor objects
+	Ptr<BackgroundSubtractor> pBackSub = createBackgroundSubtractorMOG2();
+	/*if (parser.get<String>("algo") == "MOG2")
+		pBackSub = 
+	else
+		pBackSub = createBackgroundSubtractorKNN();*/
+
 	while (key != 'q') {
+
 		/* Leitura de uma frame do v�deo */
 		capture.read(frame);
 		capture.read(frame2);
@@ -85,31 +97,22 @@ int main(void) {
 
 
 		// Fa�a o seu c�digo aqui...
-		//
 		// Cria uma nova imagem IVC
 		IVC *image = vc_image_new(video.width, video.height, 3, 255);
-		IVC* image2; // vc_image_new(video.width, video.height, 1, 255);
-		IVC* image3 = vc_image_new(video.width, video.height, 1, 255);
-		IVC* image4 = vc_image_new(video.width, video.height, 1, 255);
+		IVC* image2 = vc_image_new(video.width, video.height, 3, 255);
 		// Copia dados de imagem da estrutura cv::Mat para uma estrutura IVC
 		memcpy(image->data, frame.data, video.width * video.height * 3);
-		// Executa uma fun��o da nossa biblioteca vc
-		//vc_bgr_to_rgb(image,image2);
-		image2 = vc_rgb_to_gray(image);
-		vc_gray_negative(image2);
-		vc_gray_to_binary(image2, 150);
-		vc_binary_erode(image2, image3, 11);
-		blobs = vc_binary_blob_labelling(image3, image4, &nlabels);
-		vc_binary_blob_info(image4, blobs, nlabels);
-		//vc_bounding_box_binary(image, blobs, nlabels);
-		vc_bounding_box_rgb(image, blobs, nlabels);
+
+		//update the background model
+		pBackSub->apply(frame, frame2);
+		
 		// Copia dados de imagem da estrutura IVC para uma estrutura cv::Mat
-		memcpy(frame2.data, image3->data, video.width * video.height * 1);
-		memcpy(frame.data, image->data, video.width* video.height * 3);
+		//memcpy(frame2.data, image2->data, video.width * video.height * 3);
+
+	    
 		// Liberta a mem�ria da imagem IVC que havia sido criada
 		vc_image_free(image);
 		vc_image_free(image2);
-		vc_image_free(image3);
 		
 		// +++++++++++++++++++++++++
 

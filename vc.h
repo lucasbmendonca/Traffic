@@ -138,4 +138,3 @@ int vc_bounding_box_binary(IVC *src,OVC* blobs,int numeroBlobs);
 int vc_blob_stats_to_txt(OVC *blobs, int numberOfBlobs);
 int vc_bounding_box_rgb(IVC *src,OVC* blobs,int numeroBlobs);
 int vc_bgr_to_rgb(IVC* imagemEntrada, IVC* imagemSaida);
-IVC* vc_remove_background_rgb(IVC* backgroundFrame, IVC* realtimeFrame, int T);
